@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8" />
+<style type="text/css">
+<!--
+tr.hdrbubble {
+	font-size: 11px;
+	color: #ffffff;
+	font-family: arial, sans-serif, helvetica, sans-serif;
+	font-weight: bold;
+	background-color: #1947A3;
+}
+
+div.shadow {
+	position: absolute;
+	background-color: #000000;
+	z-index: 1;
+}
+
+div.search {
+	position: absolute;
+	background-color: #89CCFF;
+	z-index: 2;
+}
+-->
+</style>
+
+<script lang="text/javascript" type="text/javascript"
+	src="scripts/obj/debug.js"></script>
+<script lang="text/javascript" type="text/javascript"
+	src="scripts/obj/stringex.js"></script>
+<script lang="text/javascript" type="text/javascript"
+	src="scripts/obj/arrayex.js"></script>
+<script lang="text/javascript" type="text/javascript"
+	src="scripts/obj/mouse.js"></script>
+<script lang="text/javascript" type="text/javascript"
+	src="scripts/obj/floatdiv.js"></script>
+<script lang="text/javascript" type="text/javascript">
+var ZoomButton=0; //nagyítás egérgomb sorszáma (0-bal,1-középső,2-jobb)
+var MoveButton=0; //mozgatás egérgomb sorszáma (0-bal,1-középső,2-jobb)
+var EscapeButton=2; //művelet eliminálás egérgomb sorszáma (0-bal,1-középső,2-jobb)
+
+function mapOnMouseDown_doc(e) {
+  if (!e) e=event;
+  var str=new String();
+  var buttons=getEventButton(e);
+  for (var i=buttons.length;i--;) {
+    if (buttons[i]) {
+      obj_mouse.ButtonState[i]=true;
+      obj_mouse.LastDown[i].copy(obj_mouse.PosNow);
+    }
+  }
+  obj_mouse.OnMouseDown(e);
+  return true;
+}
+
+function mapOnMouseUp_doc(e) {
+  if (!e) e=event;
+  var buttons=getEventButton(e);
+  for (var i=buttons.length;i--;) {
+    if (buttons[i]) {
+      obj_mouse.ButtonState[i]=false;
+      obj_mouse.LastUp[i].copy(obj_mouse.PosNow);
+    }
+  }
+  obj_mouse.OnMouseUp(e);
+  return true;
+}
+
+function mapOnMouseMove_doc(e) {
+  if (!e) e=event;
+  obj_mouse.PosNow.raster_X = (isMOZ ? e.pageX : window.event.clientX + (document.body.scrollLeft ? (document.body.scrollLeft - 2) : 0));
+  obj_mouse.PosNow.raster_Y = (isMOZ ? e.pageY : window.event.clientY + (document.body.scrollTop ? (document.body.scrollTop - 2) : 0));
+  obj_mouse.OnMouseMove();
+  return true;
+}  
+
+  var oSearch;
+  
+  function initialize(){
+    document.body.onmousedown      = mapOnMouseDown_doc;
+    document.body.onmouseup        = mapOnMouseUp_doc;
+    document.body.onmousemove      = mapOnMouseMove_doc;
+
+    var div_src=document.getElementById('search_div');
+    var div_src_shadow=document.getElementById('src_shadow_div');
+    oSearch=new FloatDiv('search_div','oSearch',div_src,div_src_shadow,50,150,100,50);
+    oSearch.Show();
+  }
+
+</script>
+</head>
+<body onLoad="setTimeout('initialize()',50);return true;">
+	<table border="0" height="550">
+		<tr>
+			<td colspan="2">
+				<table width="940">
+					<tr>
+						<td><div id="mouse_debug_div"></div></td>
+					</tr>
+					<tr>
+						<td><div id="delta_debug_div"></div></td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+	</table>
+	<div id="src_shadow_div" class="shadow" style="display:none"></div>
+	<div id="search_div" class="search" style="display:none">
+		<form name="kereses" id="kereses">
+			<table>
+				<tr class="hdrbubble" onselectstart="return false;"
+					onMouseUp='oSearch.movable=false;return true;'
+					onMouseDown='oSearch.movable=true;return true;'>
+					<td colspan="3" onselectstart="return false;">Keresés</td>
+					<td width='10%' onselectstart="return false;"><center>
+							<img src='img/close.gif' onClick='oSearch.Hide();'>
+						</center></td>
+				</tr>
+				<tr>
+					<td colspan=>
+						<table width="280">
+							<tr>
+								<td colspan="2"><input type="checkbox" name="chxValid"
+									id="chxValid" value='0'> validálás <input
+									type="checkbox" name="chxBubble" id="chxBubble" value='0'>
+									buborékadatok betöltése</td>
+							</tr>
+							<tr>
+								<td>Település:</td>
+								<td><SELECT NAME="qcty" ID="qcty"
+									onChange="disableSubCities ()">
+										<OPTION VALUE="Budapest">Budapest</OPTION>
+										<OPTION VALUE="Debrecen">Debrecen</OPTION>
+
+										<OPTION VALUE="Gyöngyös">Gyöngyös</OPTION>
+										<OPTION VALUE="Győr">Győr</OPTION>
+										<OPTION VALUE="Kaposvár">Kaposvár</OPTION>
+										<OPTION VALUE="Miskolc">Miskolc</OPTION>
+										<OPTION VALUE="Paks">Paks</OPTION>
+										<OPTION VALUE="Pécs">Pécs</OPTION>
+
+										<OPTION VALUE="Sopron">Sopron</OPTION>
+										<OPTION VALUE="Szekszárd">Szekszárd</OPTION>
+										<OPTION VALUE="Székesfehérvár">Székesfehérvár</OPTION>
+										<OPTION VALUE="Szolnok">Szolnok</OPTION>
+										<OPTION VALUE="Szombathely">Szombathely</OPTION>
+										<OPTION VALUE="Zalaegerszeg">Zalaegerszeg</OPTION>
+
+								</SELECT></td>
+							</tr>
+							<tr>
+								<td>Kerület:</td>
+								<td><SELECT NAME="qsct" ID="qsct">
+										<OPTION VALUE="">mindegyik kerület</OPTION>
+										<OPTION VALUE="Budapest I. Kerület">I. kerület</OPTION>
+
+										<OPTION VALUE="Budapest II. Kerület">II. kerület</OPTION>
+										<OPTION VALUE="Budapest III. Kerület">III. kerület</OPTION>
+										<OPTION VALUE="Budapest IV. Kerület">IV. kerület</OPTION>
+										<OPTION VALUE="Budapest V. Kerület">V. kerület</OPTION>
+										<OPTION VALUE="Budapest VI. Kerület">VI. kerület</OPTION>
+										<OPTION VALUE="Budapest VII. Kerület">VII. kerület</OPTION>
+
+										<OPTION VALUE="Budapest VIII. Kerület">VIII. kerület</OPTION>
+										<OPTION VALUE="Budapest IX. Kerület">IX. kerület</OPTION>
+										<OPTION VALUE="Budapest X. Kerület">X. kerület</OPTION>
+										<OPTION VALUE="Budapest XI. Kerület">XI. kerület</OPTION>
+										<OPTION VALUE="Budapest XII. Kerület">XII. kerület</OPTION>
+										<OPTION VALUE="Budapest XIII. Kerület">XIII. kerület</OPTION>
+
+										<OPTION VALUE="Budapest XIV. Kerület">XIV. kerület</OPTION>
+										<OPTION VALUE="Budapest XV. Kerület">XV. kerület</OPTION>
+										<OPTION VALUE="Budapest XVI. Kerület">XVI. kerület</OPTION>
+										<OPTION VALUE="Budapest XVII. Kerület">XVII. kerület</OPTION>
+										<OPTION VALUE="Budapest XVIII. Kerület">XVIII.
+											kerület</OPTION>
+										<OPTION VALUE="Budapest XIX. Kerület">XIX. kerület</OPTION>
+
+										<OPTION VALUE="Budapest XX. Kerület">XX. kerület</OPTION>
+										<OPTION VALUE="Budapest XXI. Kerület">XXI. kerület</OPTION>
+										<OPTION VALUE="Budapest XXII. Kerület">XXII. kerület</OPTION>
+										<OPTION VALUE="Budapest XXIII. Kerület">XXIII.
+											kerület</OPTION>
+								</SELECT></td>
+							</tr>
+							<tr>
+								<td>Közterület:</td>
+								<td><input name="qstr" id="qstr"></td>
+							</tr>
+							<tr>
+								<td>jelleg:</td>
+								<td><input name="qtyp" id="qtyp"></td>
+							</tr>
+							<tr>
+								<td>házszám:</td>
+								<td><input name="qnmb" id="qnmb"></td>
+							</tr>
+							<tr>
+								<td>alszám:</td>
+								<td><input name="qsubnmb" id="qsubnmb"></td>
+							</tr>
+							<tr>
+								<td colspan="2"><input type="button" name="btnKereses"
+									value="Keresés"
+									onclick="oSearch.Hide();">
+								</td>
+							</tr>
+						</table>
+					</td>
+					<td valign="top">
+						<table>
+							<tr>
+								<td>&nbsp;</td>
+							</tr>
+							<tr>
+								<td colspan="2"><input name="qfil" id="qfil"
+									value="haztomb.new"></td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+			</table>
+		</form>
+	</div>
+</body>
+</html>
+
